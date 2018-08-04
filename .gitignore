@@ -1,0 +1,4 @@
+dist/*
+.vscode
+.cataclysmdda/*
+node_modules
