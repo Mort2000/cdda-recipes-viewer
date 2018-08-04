@@ -1,4 +1,5 @@
-dist/*
+dist
+.build
 .vscode
-.cataclysmdda/*
+.cataclysmdda
 node_modules
