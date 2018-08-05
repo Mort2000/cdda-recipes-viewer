@@ -6,30 +6,29 @@ import Select from './components/select';
 
 import items from '../.build/items';
 import recipes from '../.build/recipes';
+import requirements from '../.build/requirements';
 import locale from '../.build/locales/zh_CN.json';
 
 document.addEventListener('DOMContentLoaded', () => {
   const viewer = new RecipeViewer();
   viewer.mount(d3.select('svg'));
 
-  const index = new RecipesIndex(items, recipes, locale);
+  const index = new RecipesIndex(items, recipes, requirements, locale);
   const select = new Select('Item', d3.select('#select'));
 
   select.dispatch(input => index.findAll(input).map(
-    ({ title, id }) => ({ label: title, value: id }),
+    ({ title, id }) => ({ label: `${title} (${id})`, value: id }),
   ));
 
   const view = (id) => {
     const item = index.items.get(id);
     viewer.load(item.upstream());
-    viewer.draw();
-    viewer.start();
   };
 
   select.input.on('change', () => {
     if (index.items.has(select.input.value)) view(select.value);
   });
 
-  view('water_clean');
+  view('hsurvivor_suit');
   select.input.node().focus();
 });

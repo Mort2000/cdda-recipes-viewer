@@ -74,55 +74,69 @@ export default class RecipeViewer {
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M 0 0 4 2 0 4 1 2');
+
+    this.linkLayer = this.svg.append('g').attr('class', 'links');
+    this.nodeLayer = this.svg.append('g').attr('class', 'nodes');
+    this.textLayer = this.svg.append('g').attr('class', 'texts');
   }
 
   load([nodes, links]) {
-    this.clear();
-    this.data = { nodes, links };
+    this.data = {
+      nodes,
+      links: links.map((
+        ([source, target]) => ({ source: source.id, target: target.id, id: `${source.id}->${target.id}` })
+      )),
+    };
+    this.draw();
+    this.start();
   }
 
-  clear() {
-    if (this.simulation) this.simulation.on('tick', null);
-    this.svg.selectAll('g').remove();
+  get link() {
+    return this.linkLayer.selectAll('line').data(this.data.links, ({ id }) => id);
+  }
+
+  get node() {
+    return this.nodeLayer.selectAll('circle').data(this.data.nodes, ({ id }) => id);
+  }
+
+  get text() {
+    return this.textLayer.selectAll('text').data(this.data.nodes, ({ id }) => id);
   }
 
   draw() {
+    if (this.simulation) this.simulation.on('tick', null);
+
     this.simulation = d3.forceSimulation()
       .force('link', d3.forceLink().id(({ id }) => id))
       .force('charge', d3.forceManyBody(-100))
       .force('collide', d3.forceCollide(30))
       .force('center', d3.forceCenter(this.width / 2, this.height / 2));
 
-    this.link = this.svg.append('g')
-      .attr('class', 'links')
-      .selectAll('line')
-      .data(this.data.links)
-      .enter()
+    this.link.exit().remove();
+    this.link.enter()
       .append('line')
       .attr('stroke-width', 3)
       .attr('marker-end', 'url(#triangle)');
 
-    this.node = this.svg.append('g')
-      .attr('class', 'nodes')
-      .selectAll('circle')
-      .data(this.data.nodes)
-      .enter()
+    this.node.exit().remove();
+    const newNodes = this.node.enter()
       .append('circle')
       .call(d3.drag()
         .on('start', this.dragstarted.bind(this))
         .on('drag', this.dragged.bind(this))
         .on('end', this.dragended.bind(this)));
 
-    this.node.append('title').text(({ item }) => item.components.length);
-    this.text = this.svg.append('g')
-      .attr('class', 'nodes')
-      .selectAll('text')
-      .data(this.data.nodes)
-      .enter()
+    newNodes.append('title').text(({ components }) => components && components.length);
+
+    this.text.exit().remove();
+    this.text.enter()
       .append('text')
       .attr('dy', 4)
       .attr('class', 'text')
-      .text(({ title }) => title);
+      .text(({ title }) => title)
+      .on('click', (item) => {
+        this.load(item.upstream());
+      });
   }
 
   start() {
@@ -132,10 +146,11 @@ export default class RecipeViewer {
 
     this.simulation
       .force('charge')
-      .strength(({ item }) => -item.components.length * 50);
+      .theta(0.7)
+      .strength(({ components }) => (-components.length * 40));
 
     this.simulation.force('link')
       .links(this.data.links)
-      .distance(({ target }) => Math.log(target.item.components.length + 1, 2) * 80);
+      .distance(({ target }) => Math.log(target.components.length + 2, 2) * this.radius * 5);
   }
 }

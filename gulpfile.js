@@ -30,10 +30,16 @@ gulp.task('recipes', () => {
     .pipe(gulp.dest(buildDir));
 });
 
+gulp.task('requirements', () => {
+  gulp.src(`${srcDir}/json/requirements/**/*.json`)
+    .pipe(merge(mergeOptions('requirements.js')))
+    .pipe(gulp.dest(buildDir));
+});
+
 gulp.task('items', () => {
   gulp.src([`${srcDir}/json/materials.json`, `${srcDir}/json/items/**/*.json`])
     .pipe(merge(mergeOptions('items.js')))
     .pipe(gulp.dest(buildDir));
 });
 
-gulp.task('default', ['i18n', 'recipes', 'items']);
+gulp.task('default', ['i18n', 'recipes', 'items', 'requirements']);
